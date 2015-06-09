@@ -47,13 +47,11 @@ Our first priority is to see if server is available, and use the canonical URL
 if possible. We do so with the following code:
 ```javascript
 var l = location;
-var d = /;(([^/;]*)[^;]*)/.exec(l.href); // regex matching the Canonical URL and domain.
-var u = 'https://' + d[1]; // The Canonical URL.
-var f = 'https://' + d[2] + '/favicon.ico'; // The Favicon.
-document.write("<img src='" + f + "' onload='l.href=u'>");
+var u = 'https://' + l.href.split(';')[1]; // The Canonical URL.
+document.write("<iframe src='" + u + "' onload='l.href=u'>");
 ```
 
-This attempts to load the 'favicon.ico' resource from the server, and on success
+This attempts to load the resource from the server, and on success
 directs the browser to the canonical URL.
 
 Secondly, we want to attempt alternative mechanisms for loading the URL based
@@ -78,13 +76,15 @@ The Development hash does not provide availability, since it uses a unique domai
 which can be disrupted without collateral damage. However, it allows for
 low-hassle iteration on the fallback script:
 
+
 A payload of:
 ```javascript
-h='https://',l=location,u=/;(([^/;]*)[^;]*)/.exec(l.href);document.write('<img src='+h+u[2]+'/favicon.ico onload=\\'l.href=h+u[1]\\'><s'+'cript src='+h+'willscott.github.io/peer-fallback/peer-fallback.js>');
+l=location,u='https://'+l.href.split(';')[1];document.write('<iframe src='+u+' onload=\\'l.href=u\\'/><s'+'cript src=https://willscott.github.io/peer-fallback/peer-fallback.js>');
 ```
+
 
 Produces the following HTTP+ URL:
 ```
-data:http+;URL;base64,PHNjcmlwdD5oPSdodHRwczovLycsbD1sb2NhdGlvbix1PS87KChbXi87XSopW147XSopLy5leGVjKGwuaHJlZik7ZG9jdW1lbnQud3JpdGUoJzxpbWcgc3JjPScraCt1WzJdKycvZmF2aWNvbi5pY28gb25sb2FkPVwnbC5ocmVmPWgrdVsxXVwnPjxzJysnY3JpcHQgc3JjPScraCsnd2lsbHNjb3R0LmdpdGh1Yi5pby9wZWVyLWZhbGxiYWNrL3BlZXItZmFsbGJhY2suanM+Jyk7PC9zY3JpcHQ+
+data:http+;CANONICAL_URL;base64,PHNjcmlwdD5sPWxvY2F0aW9uLHU9J2h0dHBzOi8vJytsLmhyZWYuc3BsaXQoJzsnKVsxXTtkb2N1bWVudC53cml0ZSgnPGlmcmFtZSBzcmM9Jyt1Kycgb25sb2FkPVwnbC5ocmVmPXVcJy8+PHMnKydjcmlwdCBzcmM9aHR0cHM6Ly93aWxsc2NvdHQuZ2l0aHViLmlvL3BlZXItZmFsbGJhY2svcGVlci1mYWxsYmFjay5qcz4nKTs8L3NjcmlwdD4=
 ```
 
