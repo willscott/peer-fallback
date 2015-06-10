@@ -20,18 +20,17 @@ HTTP+ URLs
 
 We introduce `HTTP+` URLs of the following scheme:
 ```
-data:http+;www.google.com/;base64,PHNjcmlwdD5sPXdpbmRvdy5sb2NhdGlvbix1PSdodHRwczovLycrbC5ocmVmLnNwbGl0KCc7JylbMV07ZG9jdW1lbnQud3JpdGUoJzxpbWcgc3JjPVwnJyt1KydcJyBvbmxvYWQ9bC5ocmVmPXUgb25lcnJvcj1sLmhyZWY9dT48cycrJ2NyaXB0IHNyYz1odHRwczovL3dpbGxzY290dC5naXRodWIuaW8vcGVlci1mYWxsYmFjay9wZWVyLWZhbGxiYWNrLmpzPicpOzwvc2NyaXB0Pg==
+data:text/html;https://www.google.com/;base64,PHNjcmlwdD5sPXdpbmRvdy5sb2NhdGlvbix1PSdodHRwczovLycrbC5ocmVmLnNwbGl0KCc7JylbMV07ZG9jdW1lbnQud3JpdGUoJzxpbWcgc3JjPVwnJyt1KydcJyBvbmxvYWQ9bC5ocmVmPXUgb25lcnJvcj1sLmhyZWY9dT48cycrJ2NyaXB0IHNyYz1odHRwczovL3dpbGxzY290dC5naXRodWIuaW8vcGVlci1mYWxsYmFjay9wZWVyLWZhbGxiYWNrLmpzPicpOzwvc2NyaXB0Pg==
 ```
 
 This is a resilient URL for `https://www.google.com/`. More generally, `HTTP+`
 URLs are of the form:
 ```
-data:http+;<URL>;base64,PHNjcmlwdD5sPXdpbmRvdy5sb2NhdGlvbix1PSdodHRwczovLycrbC5ocmVmLnNwbGl0KCc7JylbMV07ZG9jdW1lbnQud3JpdGUoJzxpbWcgc3JjPVwnJyt1KydcJyBvbmxvYWQ9bC5ocmVmPXUgb25lcnJvcj1sLmhyZWY9dT48cycrJ2NyaXB0IHNyYz1odHRwczovL3dpbGxzY290dC5naXRodWIuaW8vcGVlci1mYWxsYmFjay9wZWVyLWZhbGxiYWNrLmpzPicpOzwvc2NyaXB0Pg==
+data:text/html;<URL>;base64,PHNjcmlwdD5sPXdpbmRvdy5sb2NhdGlvbix1PSdodHRwczovLycrbC5ocmVmLnNwbGl0KCc7JylbMV07ZG9jdW1lbnQud3JpdGUoJzxpbWcgc3JjPVwnJyt1KydcJyBvbmxvYWQ9bC5ocmVmPXUgb25lcnJvcj1sLmhyZWY9dT48cycrJ2NyaXB0IHNyYz1odHRwczovL3dpbGxzY290dC5naXRodWIuaW8vcGVlci1mYWxsYmFjay9wZWVyLWZhbGxiYWNrLmpzPicpOzwvc2NyaXB0Pg==
 ```
 
 These are actually base64-encoded `data` URLs, with two deviations from the
-standard which appear largely tolerated by browsers. `http+`
-is misused as the mime-type for the URL to signal the purpose of the resource.
+standard which appear largely tolerated by browsers. 
 The canonical url is replaces the `charset` field for the Data URL to provide
 readability and user insight into the URL. Invalid charsets are
 ignored by most browsers. The resulting URLs a generally recognized correctly by
@@ -47,7 +46,7 @@ Our first priority is to see if server is available, and use the canonical URL
 if possible. We do so with the following code:
 ```javascript
 var l = location;
-var u = 'https://' + l.href.split(';')[1]; // The Canonical URL.
+var u = l.href.split(';')[1]; // The Canonical URL.
 document.write("<iframe src='" + u + "' onload='l.href=u'>");
 ```
 
@@ -66,7 +65,7 @@ Given desired javascript code, we can construct the http+ URL as follows:
 ```javascript
 var script = "<script>CODE_TO_RUN</script>";
 var data = new Buffer(script).toString('base64');
-console.log('data:http+;CANONICAL_URL;base64,' + data);
+console.log('data:text/html;CANONICAL_URL;base64,' + data);
 ```
 
 Development
@@ -79,12 +78,12 @@ low-hassle iteration on the fallback script:
 
 A payload of:
 ```javascript
-l=location,u='https://'+l.href.split(';')[1];document.write('<iframe src='+u+' onload=\\'l.href=u\\'/><s'+'cript src=https://willscott.github.io/peer-fallback/peer-fallback.js>');
+l=location,u=l.href.split(';')[1];document.write('<iframe src='+u+' onload=\\'l.href=u\\'/><s'+'cript src=https://willscott.github.io/peer-fallback/peer-fallback.js>');
 ```
 
 
 Produces the following HTTP+ URL:
 ```
-data:http+;CANONICAL_URL;base64,PHNjcmlwdD5sPWxvY2F0aW9uLHU9J2h0dHBzOi8vJytsLmhyZWYuc3BsaXQoJzsnKVsxXTtkb2N1bWVudC53cml0ZSgnPGlmcmFtZSBzcmM9Jyt1Kycgb25sb2FkPVwnbC5ocmVmPXVcJy8+PHMnKydjcmlwdCBzcmM9aHR0cHM6Ly93aWxsc2NvdHQuZ2l0aHViLmlvL3BlZXItZmFsbGJhY2svcGVlci1mYWxsYmFjay5qcz4nKTs8L3NjcmlwdD4=
+data:text/html;CANONICAL_URL;base64,PHNjcmlwdD5sPWxvY2F0aW9uLHU9J2h0dHBzOi8vJytsLmhyZWYuc3BsaXQoJzsnKVsxXTtkb2N1bWVudC53cml0ZSgnPGlmcmFtZSBzcmM9Jyt1Kycgb25sb2FkPVwnbC5ocmVmPXVcJy8+PHMnKydjcmlwdCBzcmM9aHR0cHM6Ly93aWxsc2NvdHQuZ2l0aHViLmlvL3BlZXItZmFsbGJhY2svcGVlci1mYWxsYmFjay5qcz4nKTs8L3NjcmlwdD4=
 ```
 

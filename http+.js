@@ -6,7 +6,7 @@ window.addEventListener('load', function () {
     var href = new URL(els[i].href);
     if (href.protocol.startsWith('http')) {
       var url = href.host + href.pathname + '?' + href.search;
-      els[i].href='data:http+;' + url +';base64,' + hash;
+      els[i].href='data:text/html;' + url +';base64,' + hash;
     }
   }
 },true);
