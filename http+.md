@@ -20,21 +20,23 @@ HTTP+ URLs
 
 We introduce `HTTP+` URLs of the following scheme:
 ```
-data:text/html;https://www.google.com/#;base64,PHNjcmlwdD5sPXdpbmRvdy5sb2NhdGlvbix1PSdodHRwczovLycrbC5ocmVmLnNwbGl0KCc7JylbMV07ZG9jdW1lbnQud3JpdGUoJzxpbWcgc3JjPVwnJyt1KydcJyBvbmxvYWQ9bC5ocmVmPXUgb25lcnJvcj1sLmhyZWY9dT48cycrJ2NyaXB0IHNyYz1odHRwczovL3dpbGxzY290dC5naXRodWIuaW8vcGVlci1mYWxsYmFjay9wZWVyLWZhbGxiYWNrLmpzPicpOzwvc2NyaXB0Pg==
+data:text/html;c=https://www.google.com/#;base64,PHNjcmlwdD5sPXdpbmRvdy5sb2NhdGlvbix1PSdodHRwczovLycrbC5ocmVmLnNwbGl0KCc7JylbMV07ZG9jdW1lbnQud3JpdGUoJzxpbWcgc3JjPVwnJyt1KydcJyBvbmxvYWQ9bC5ocmVmPXUgb25lcnJvcj1sLmhyZWY9dT48cycrJ2NyaXB0IHNyYz1odHRwczovL3dpbGxzY290dC5naXRodWIuaW8vcGVlci1mYWxsYmFjay9wZWVyLWZhbGxiYWNrLmpzPicpOzwvc2NyaXB0Pg==
 ```
 
 This is a resilient URL for `https://www.google.com/`. More generally, `HTTP+`
 URLs are of the form:
 ```
-data:text/html;<URL>#;base64,PHNjcmlwdD5sPXdpbmRvdy5sb2NhdGlvbix1PSdodHRwczovLycrbC5ocmVmLnNwbGl0KCc7JylbMV07ZG9jdW1lbnQud3JpdGUoJzxpbWcgc3JjPVwnJyt1KydcJyBvbmxvYWQ9bC5ocmVmPXUgb25lcnJvcj1sLmhyZWY9dT48cycrJ2NyaXB0IHNyYz1odHRwczovL3dpbGxzY290dC5naXRodWIuaW8vcGVlci1mYWxsYmFjay9wZWVyLWZhbGxiYWNrLmpzPicpOzwvc2NyaXB0Pg==
+data:text/html;c=<URL>#;base64,PHNjcmlwdD5sPXdpbmRvdy5sb2NhdGlvbix1PSdodHRwczovLycrbC5ocmVmLnNwbGl0KCc7JylbMV07ZG9jdW1lbnQud3JpdGUoJzxpbWcgc3JjPVwnJyt1KydcJyBvbmxvYWQ9bC5ocmVmPXUgb25lcnJvcj1sLmhyZWY9dT48cycrJ2NyaXB0IHNyYz1odHRwczovL3dpbGxzY290dC5naXRodWIuaW8vcGVlci1mYWxsYmFjay9wZWVyLWZhbGxiYWNrLmpzPicpOzwvc2NyaXB0Pg==
 ```
 
-These are actually base64-encoded `data` URLs, with two deviations from the
-standard which appear largely tolerated by browsers. 
-The canonical url is replaces the `charset` field for the Data URL to provide
-readability and user insight into the URL. Invalid charsets are
-ignored by most browsers. The resulting URLs a generally recognized correctly by
-browsers and bare substantial resemblance to the original URL.
+These are actually base64-encoded `data` URLs, which deviate only slightly from
+the standard and which appear largely tolerated by browsers. 
+The canonical url replaces the `charset` field for Data URLs with a special `c`
+attribute standing for `canonical`. The embedded URL is parsable by most email
+or link shortening services, with the extranious data inserted in the anchor.
+Invalid Charsets appear to be ignored, so the full data URL loads normally
+when visited. The embedded canonical URL is also easily extractable and tagged
+so it can be handled appropriately by both browsers and end users.
 
 
 Building 
@@ -43,47 +45,61 @@ Building
 What is the base64 data in the above URLs, and what does it do?
 
 Our first priority is to see if server is available, and use the canonical URL
-if possible. We do so with the following code:
+if possible. There are several mechanisms that can be used to figure this out
+in a small number of bytes.
+
+ * Meta refresh or JS redirect to the URL.
+ * load URL in iFrame and see if `onload` handler is called.
+ * Load favicon for domain in an image and see if `onload` handler is called.
+
+For the moment we use the iFrame method:
 ```javascript
 var l = location;
 var u = l.href.split(';')[1]; // The Canonical URL.
 document.write("<iframe src='" + u + "' onload='l.href=u'>");
 ```
 
-This attempts to load the resource from the server, and on success
-directs the browser to the canonical URL.
-
 Secondly, we want to attempt alternative mechanisms for loading the URL based
-on the current network conditions. For this, we will attempt to load a static
+on the current network conditions. For this, we attempt to load a static
 script which is widely available and hopefully cached on the user's machine.
-This would be done through the following process:
+(ideally we can come up with a standard that allows browsers to recognize this
+form of URL and have the contents of such a library preloaded.)
+This would can be done through the following process:
 ```javascript
 document.write("<s'+'cript src='library_URL'>");
 ```
 
-Given desired javascript code, we can construct the http+ URL as follows:
+With a payload, the constructed http+ URL can be build with node as:
 ```javascript
 var script = "<script>CODE_TO_RUN</script>";
 var data = new Buffer(script).toString('base64');
-console.log('data:text/html;CANONICAL_URL#;base64,' + data);
+console.log('data:text/html;c=CANONICAL_URL#;base64,' + data);
 ```
 
 Development
 -----------
 
-The Development hash does not provide availability, since it uses a unique domain,
-which can be disrupted without collateral damage. However, it allows for
-low-hassle iteration on the fallback script:
+This hash does not provide availability, since it uses an un-cached and easily
+identifiable script. However, it allows for low-hassle iteration on the
+fallback script:
 
 
 A payload of:
 ```javascript
-l=location,u=l.href.split(';')[1];document.write('<iframe src='+u+' onload=\\'l.href=u\\'/><s'+'cript src=https://willscott.github.io/peer-fallback/peer-fallback.js>');
+document.write('<meta http-equiv=refresh content=1;'+location.href.substr(17)+'><s'+'cript src=https://willscott.github.io/peer-fallback/peer-fallback.js>');
 ```
 
 
 Produces the following HTTP+ URL:
 ```
-data:text/html;CANONICAL_URL;base64,PHNjcmlwdD5sPWxvY2F0aW9uLHU9J2h0dHBzOi8vJytsLmhyZWYuc3BsaXQoJzsnKVsxXTtkb2N1bWVudC53cml0ZSgnPGlmcmFtZSBzcmM9Jyt1Kycgb25sb2FkPVwnbC5ocmVmPXVcJy8+PHMnKydjcmlwdCBzcmM9aHR0cHM6Ly93aWxsc2NvdHQuZ2l0aHViLmlvL3BlZXItZmFsbGJhY2svcGVlci1mYWxsYmFjay5qcz4nKTs8L3NjcmlwdD4=
+data:text/html;c=CANONICAL_URL#;base64,PHNjcmlwdD5kb2N1bWVudC53cml0ZSgnPG1ldGEgaHR0cC1lcXVpdj1yZWZyZXNoIGNvbnRlbnQ9MTsnK2xvY2F0aW9uLmhyZWYuc3Vic3RyKDE3KSsnPjxzJysnY3JpcHQgc3JjPWh0dHBzOi8vd2lsbHNjb3R0LmdpdGh1Yi5pby9wZWVyLWZhbGxiYWNrL3BlZXItZmFsbGJhY2suanM+Jyk7PC9zY3JpcHQ+
 ```
 
+
+Other payloads:
+----
+
+* iFrame based:
+```javascript
+l=location,u=l.href.split(';')[1];document.write('<iframe src='+u+' onload=\\'l.href=u\\'/><s'+'cript src=https://willscott.github.io/peer-fallback/peer-fallback.js>');
+```
